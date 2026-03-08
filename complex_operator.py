@@ -2,6 +2,9 @@ import numpy as np
 
 
 def compute_eta_coefficients(alpha, beta, r):
+    # Only 5 eta coefficients are defined in the paper (eta0 to eta4)
+    if r > 5:
+        raise ValueError(f"r={r} exceeds the 5 coefficients defined in paper.")
     a, b = alpha, beta
     eta = []
 

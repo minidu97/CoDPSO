@@ -4,14 +4,19 @@ import config
 
 class Particle:
     def __init__(self, dim):
-        self.position = np.random.uniform(
-            config.SEARCH_BOUNDS[0],
-            config.SEARCH_BOUNDS[1],
-            dim
+        x_min = config.SEARCH_BOUNDS[0]   #-100
+        x_max = config.SEARCH_BOUNDS[1]   # 100
+
+        self.position = (
+            np.random.rand(dim) * (x_max - x_min) + x_min
         )
-        #Velocity initialized in symmetric range
-        v_max = (config.SEARCH_BOUNDS[1] - config.SEARCH_BOUNDS[0]) / 4.0
-        self.velocity = np.random.uniform(-v_max, v_max, dim)
+
+        v_max = (x_max - x_min) / 4.0     #= 50
+        v_min = -v_max                    #= -50
+
+        self.velocity = (
+            np.random.rand(dim) * (v_max - v_min) + v_min
+        )
 
         self.pbest_position = self.position.copy()
         self.pbest_value    = np.inf
