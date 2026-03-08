@@ -163,7 +163,7 @@ def codpso(problem):
                         swarm.reset_stagnancy_counter()
 
                     #if N < N_min → mark swarm for deletion
-                    if swarm.size < config.N_MIN:
+                    if swarm.size < config.N_MIN and len(swarms) > config.NS_MIN:
                         swarms_to_remove.append(s_idx)
                         continue
 
@@ -176,7 +176,7 @@ def codpso(problem):
 
                         swarm.reset_stagnancy_counter()
 
-                    if swarm.size < config.N_MIN:
+                    if swarm.size < config.N_MIN and len(swarms) > config.NS_MIN:
                         swarms_to_remove.append(s_idx)
                         continue
 
