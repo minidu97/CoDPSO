@@ -16,7 +16,7 @@ NS_MIN         = 3              #Minimum number of swarms
 NS_MAX         = 10             #Maximum number of swarms
 
 PARTICLES_PER_SWARM = 10        #Initial particles per swarm
-N_MIN          = 10             #Minimum particles per swarm
+N_MIN          = 3             #Minimum particles per swarm
 N_MAX          = 50             #Maximum particles per swarm
 
 SC_MAX         = 30             #Stagnancy counter limit

@@ -6,7 +6,7 @@ from stats_utils import compute_statistics
 from plots import (plot_convergence_curves, plot_boxplots,
                    plot_bar_charts, plot_sensitivity_scatter,
                    record_convergence)
-
+from export_results import export_results_to_excel
 
 def run_experiment(fid):
     problem = get_cec2022_function(fid, config.DIMENSION)
@@ -100,3 +100,20 @@ if __name__ == "__main__":
     plot_sensitivity_scatter(rank_data_20d, dim=20)
 
     print("\nAll plots saved to figures/ folder.")
+
+    print("\nExporting results to Excel...")
+
+    if config.DIMENSION == 10:
+        export_results_to_excel(
+            my_results_d10 = {fid: np.array(r) for fid, r in all_results.items()},
+            my_results_d20 = {},
+            filepath       = "CoDPSO_Results_D10.xlsx"
+        )
+    else:
+        export_results_to_excel(
+            my_results_d10 = {},
+            my_results_d20 = {fid: np.array(r) for fid, r in all_results.items()},
+            filepath       = "CoDPSO_Results_D20.xlsx"
+        )
+
+    print("\n===== Done =====")

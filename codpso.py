@@ -22,17 +22,24 @@ def codpso(problem):
     global_best_value = np.inf
 
     #Calculate initial fitness values for all particles
+    def evaluate_swarm_init(swarm):
+            nonlocal fes, global_best_value
+            for particle in swarm.particles:
+                if fes >= max_fes:
+                    break
+                fitness = problem.evaluate(particle.position)
+                fes    += 1
+                particle.pbest_value    = fitness
+                particle.pbest_position = particle.position.copy()
+                if fitness < swarm.gbest_value:
+                    swarm.gbest_value    = fitness
+                    swarm.gbest_position = particle.position.copy()
+                if fitness < global_best_value:
+                    global_best_value = fitness
+
     for swarm in swarms:
-        for particle in swarm.particles:
-            fitness = problem.evaluate(particle.position)
-            fes    += 1
-            particle.pbest_value    = fitness
-            particle.pbest_position = particle.position.copy()
-            if fitness < swarm.gbest_value:
-                swarm.gbest_value    = fitness
-                swarm.gbest_position = particle.position.copy()
-            if fitness < global_best_value:
-                global_best_value = fitness
+        evaluate_swarm_init(swarm)
+
 
     #Main flow
     while fes < max_fes:
@@ -48,8 +55,6 @@ def codpso(problem):
             #Save G_best before this iteration for DE comparison - compare G_best_new vs G_best_old
             gbest_old = gbest_old_per_swarm[s_idx]
             gbest_old_per_swarm[s_idx] = swarm.gbest_value
-
-            #Reset per-iteration kill counter
             swarm.n_kill = 0
 
             #Calculate velocity vector and Update particle positions
@@ -66,28 +71,17 @@ def codpso(problem):
                 r1 = np.random.rand()
                 r2 = np.random.rand()
 
-                cognitive = config.C1 * r1 * (
-                    particle.pbest_position - particle.position
-                )
-                social = config.C2 * r2 * (
-                    swarm.gbest_position - particle.position
-                )
+                cognitive = config.C1 * r1 * (particle.pbest_position - particle.position)
+                social = config.C2 * r2 * (swarm.gbest_position - particle.position)
 
                 new_velocity = memory + cognitive + social
 
                 #clip velocity to -vmax and +vmax
-                v_max = (
-                    config.SEARCH_BOUNDS[1] - config.SEARCH_BOUNDS[0]
-                ) / 4.0
+                v_max = (config.SEARCH_BOUNDS[1] - config.SEARCH_BOUNDS[0]) / 4.0
                 new_velocity = np.clip(new_velocity, -v_max, v_max)
 
                 #Update position and clip to search bounds
-                new_position = particle.position + new_velocity
-                new_position = np.clip(
-                    new_position,
-                    config.SEARCH_BOUNDS[0],
-                    config.SEARCH_BOUNDS[1]
-                )
+                new_position = np.clip(particle.position + new_velocity, config.SEARCH_BOUNDS[0], config.SEARCH_BOUNDS[1])
 
                 particle.velocity = new_velocity
                 particle.position = new_position
@@ -101,9 +95,11 @@ def codpso(problem):
             fitness_improved = False
 
             for particle in swarm.particles:
+                if fes >= max_fes:
+                    break
                 fitness = problem.evaluate(particle.position)
                 fes    += 1
-
+                
                 #Update personal best
                 if fitness < particle.pbest_value:
                     particle.pbest_value    = fitness
@@ -124,6 +120,7 @@ def codpso(problem):
 
             if fitness_improved:
                 swarm.spawn_particle()   #adds one particle if N < N_max
+                swarm.reset_kill_counters()
 
             else:
                 #Update swarm cycle (increment SC)
@@ -141,7 +138,7 @@ def codpso(problem):
                     degradation_point[s_idx] = gbest_old
 
                     #DE deletion condition
-                    if swarm.stagnancy_counter == config.SC_MAX:
+                    if swarm.stagnancy_counter >= config.SC_MAX:
                         dp = degradation_point[s_idx]
 
                         #Find worst particle whose pbest > Dp
@@ -157,12 +154,13 @@ def codpso(problem):
                                 key=lambda i: swarm.particles[i].pbest_value
                             )
                             swarm.particles.pop(worst_idx)
-                            swarm.n_kill += 1
+                            swarm.n_kill       += 1
+                            swarm.n_kill_total += 1   # FIX 1: also increment cumulative counter
 
                         #Re-initialize SC
                         swarm.reset_stagnancy_counter()
 
-                    #if N < N_min → mark swarm for deletion
+                    #if N < N_min AND Ns > Ns_min → mark swarm for deletion
                     if swarm.size < config.N_MIN and len(swarms) > config.NS_MIN:
                         swarms_to_remove.append(s_idx)
                         continue
@@ -170,9 +168,9 @@ def codpso(problem):
                 else:
                     #Standard DPSO branch
 
-                    if swarm.stagnancy_counter == config.SC_MAX:
+                    if swarm.stagnancy_counter >= config.SC_MAX:
 
-                        swarm.delete_worst_particle()
+                        swarm.delete_worst_particle()   #increments both n_kill and n_kill_total internally
 
                         swarm.reset_stagnancy_counter()
 
@@ -190,17 +188,19 @@ def codpso(problem):
                 degradation_point.pop(idx)
                 gbest_old_per_swarm.pop(idx)
 
-        #Spawn new swarm
-        all_no_kill = all(s.n_kill == 0 for s in swarms)
-        if all_no_kill and len(swarms) < config.NS_MAX:
+        had_any_kill = any(s.n_kill > 0 for s in swarms)
+        if not had_any_kill and len(swarms) < config.NS_MAX:
             new_swarm = Swarm(config.PARTICLES_PER_SWARM, dim)
+            evaluate_swarm_init(new_swarm)   #evaluate before joining the loop
             swarms.append(new_swarm)
             degradation_point.append(None)
             gbest_old_per_swarm.append(np.inf)
 
         #restart with one fresh swarm
         if len(swarms) == 0:
-            swarms              = [Swarm(config.PARTICLES_PER_SWARM, dim)]
+            new_swarm = Swarm(config.PARTICLES_PER_SWARM, dim)
+            evaluate_swarm_init(new_swarm)
+            swarms              = [new_swarm]
             degradation_point   = [None]
             gbest_old_per_swarm = [np.inf]
 

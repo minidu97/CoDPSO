@@ -35,6 +35,7 @@ class Swarm:
 
         self.stagnancy_counter = 0   #SC in the paper
         self.n_kill            = 0   #particles removed since last improvement
+        self.n_kill_total = 0
 
     #Punitive strategy helpers
 
@@ -48,6 +49,7 @@ class Swarm:
         )
         self.particles.pop(worst_idx)
         self.n_kill += 1
+        self.n_kill_total += 1
 
     def spawn_particle(self):
         #Add a new randomly initialised particle to this swarm
@@ -57,8 +59,13 @@ class Swarm:
     def reset_stagnancy_counter(self):
         #Reset SC after a deletion using paper Eq
         self.stagnancy_counter = int(
-            config.SC_MAX * (1.0 - 1.0 / (1.0 + self.n_kill))
+            config.SC_MAX * (1.0 - 1.0 / (1.0 + self.n_kill_total))
         )
+
+    def reset_kill_counters(self):
+        #to restart the kill cycle
+        self.n_kill       = 0
+        self.n_kill_total = 0
 
     @property
     def size(self):
