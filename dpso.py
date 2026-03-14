@@ -4,24 +4,18 @@ import config
 
 class Particle:
     def __init__(self, dim):
-        x_min = config.SEARCH_BOUNDS[0]   #-100
-        x_max = config.SEARCH_BOUNDS[1]   # 100
+        x_min = config.SEARCH_BOUNDS[0]
+        x_max = config.SEARCH_BOUNDS[1]
 
-        self.position = (
-            np.random.rand(dim) * (x_max - x_min) + x_min
-        )
+        self.position = np.random.rand(dim) * (x_max - x_min) + x_min
 
-        v_max = (x_max - x_min) / 4.0     #= 50
-        v_min = -v_max                    #= -50
-
-        self.velocity = (
-            np.random.rand(dim) * (v_max - v_min) + v_min
-        )
+        v_max = (x_max - x_min) / 4.0
+        v_min = -v_max
+        self.velocity = np.random.rand(dim) * (v_max - v_min) + v_min
 
         self.pbest_position = self.position.copy()
         self.pbest_value    = np.inf
 
-        #Velocity history - newest entry first
         self.velocity_history = [self.velocity.copy()]
 
 
@@ -33,14 +27,12 @@ class Swarm:
         self.gbest_position = self.particles[0].position.copy()
         self.gbest_value    = np.inf
 
-        self.stagnancy_counter = 0   #SC in the paper
-        self.n_kill            = 0   #particles removed since last improvement
-        self.n_kill_total = 0
+        self.stagnancy_counter = 0
 
-    #Punitive strategy helpers
+        self.n_kill       = 0   #kills this iteration only (resets each iteration)
+        self.n_kill_total = 0   #cumulative kills since last improvement — used in Eq.(7)
 
     def delete_worst_particle(self):
-        #Remove the particle with the highest (worst) pbest value
         if len(self.particles) == 0:
             return
         worst_idx = max(
@@ -48,22 +40,22 @@ class Swarm:
             key=lambda i: self.particles[i].pbest_value
         )
         self.particles.pop(worst_idx)
-        self.n_kill += 1
+        self.n_kill       += 1
         self.n_kill_total += 1
 
     def spawn_particle(self):
-        #Add a new randomly initialised particle to this swarm
         if len(self.particles) < config.N_MAX:
             self.particles.append(Particle(self.dim))
 
     def reset_stagnancy_counter(self):
-        #Reset SC after a deletion using paper Eq
+        #SC = SC_max * (1 - 1/(1 + N_kill))
+        #Uses n_kill_total so SC grows with repeated deletions
         self.stagnancy_counter = int(
             config.SC_MAX * (1.0 - 1.0 / (1.0 + self.n_kill_total))
         )
 
     def reset_kill_counters(self):
-        #to restart the kill cycle
+        #called on genuine improvement — restarts the kill cycle
         self.n_kill       = 0
         self.n_kill_total = 0
 
