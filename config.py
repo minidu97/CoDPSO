@@ -18,6 +18,6 @@ PARTICLES_PER_SWARM = 10
 N_MIN               = 3       # FIX: was 10 — equalled PARTICLES_PER_SWARM, killing swarms instantly
 N_MAX               = 50
 
-SC_MAX              = 30
+SC_MAX              = 20 #changed from 30 to 20
 
 RUNS = 30
