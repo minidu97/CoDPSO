@@ -7,8 +7,8 @@ BETA  = 0.8
 MEMORY_LENGTH = 4
 
 W  = 1.0
-C1 = 1.5
-C2 = 1.5
+C1 = 2.0 #was 1.5
+C2 = 1.0 #was 1.5
 
 NUM_SWARMS          = 5
 NS_MIN              = 3
@@ -18,6 +18,6 @@ PARTICLES_PER_SWARM = 10
 N_MIN               = 3       # FIX: was 10 — equalled PARTICLES_PER_SWARM, killing swarms instantly
 N_MAX               = 50
 
-SC_MAX              = 20 #changed from 30 to 20
+SC_MAX              = 30 #changed from 30 to 20
 
 RUNS = 30
